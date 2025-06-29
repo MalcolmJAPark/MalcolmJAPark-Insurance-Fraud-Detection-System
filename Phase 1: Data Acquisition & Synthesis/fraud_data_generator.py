@@ -3,44 +3,51 @@ import numpy as np
 from datetime import datetime, timedelta
 import random
 from faker import Faker
-import json
 
-# Initialize Faker for realistic data generation
+# Initialize with seeds for reproducibility
 fake = Faker()
 Faker.seed(42)
 np.random.seed(42)
 random.seed(42)
 
-class InsuranceFraudDataGenerator:
+class ImprovedInsuranceFraudDataGenerator:
+    """
+    Improved generator with more realistic fraud patterns
+    Key changes:
+    - No perfect correlations
+    - More subtle fraud indicators
+    - Realistic overlap between fraud and legitimate claims
+    - Added noise and variability
+    """
+    
     def __init__(self):
         self.claim_types = ['Collision', 'Property Damage', 'Bodily Injury', 'Personal Injury', 'Theft', 'Fire', 'Natural Disaster']
         self.occupations = ['Engineer', 'Teacher', 'Doctor', 'Lawyer', 'Retail Worker', 'Construction Worker', 
                            'Office Manager', 'Salesperson', 'Unemployed', 'Self-employed', 'Accountant', 'Nurse']
-        self.repair_shops = [f"Shop_{i}" for i in range(1, 21)]  # 20 repair shops
-        self.shared_addresses = [fake.address() for _ in range(50)]  # Pool of addresses for network features
-        self.shared_phones = [fake.phone_number() for _ in range(30)]  # Pool of phone numbers
+        self.repair_shops = [f"Shop_{i}" for i in range(1, 21)]
+        self.shared_addresses = [fake.address() for _ in range(50)]
+        self.shared_phones = [fake.phone_number() for _ in range(30)]
         
     def generate_policy_details(self, is_fraud=False):
-        """Generate policy details with potential fraud indicators"""
-        # Policy tenure (fraudsters often have newer policies)
-        if is_fraud and random.random() < 0.6:
-            tenure_days = random.randint(1, 180)  # New policy
+        """Generate policy details with more realistic patterns"""
+        # Policy tenure - fraudsters TEND to have newer policies but not always
+        if is_fraud and random.random() < 0.35:  # Only 35% of fraudsters have very new policies
+            tenure_days = random.randint(1, 180)
         else:
-            tenure_days = random.randint(180, 3650)  # 6 months to 10 years
+            tenure_days = random.randint(30, 3650)  # More overlap
         
-        # Premium calculation (fraudsters might have minimum coverage)
+        # Premium calculation - more subtle differences
         base_premium = random.uniform(500, 5000)
-        if is_fraud and random.random() < 0.4:
-            premium = base_premium * 0.6  # Lower premium
+        if is_fraud and random.random() < 0.25:  # Only 25% have suspiciously low premiums
+            premium = base_premium * 0.8
         else:
-            premium = base_premium
+            premium = base_premium * random.uniform(0.9, 1.1)
         
-        # Coverage limits
+        # Coverage limits - more variation
         coverage_limit = random.choice([25000, 50000, 100000, 250000, 500000])
-        if is_fraud and random.random() < 0.3:
-            coverage_limit = min(coverage_limit, 50000)  # Lower coverage
+        if is_fraud and random.random() < 0.2:  # Only 20% target specific limits
+            coverage_limit = min(coverage_limit, 100000)
         
-        # Deductibles
         deductible = random.choice([250, 500, 1000, 2500, 5000])
         
         return {
@@ -52,25 +59,26 @@ class InsuranceFraudDataGenerator:
         }
     
     def generate_claimant_info(self, is_fraud=False):
-        """Generate claimant information with potential fraud patterns"""
-        age = random.randint(18, 75)
-        if is_fraud and random.random() < 0.3:
-            age = random.randint(22, 35)  # Fraudsters often in specific age range
+        """Generate claimant info with realistic patterns"""
+        # Age - more overlap between fraud and legitimate
+        if is_fraud and random.random() < 0.2:
+            age = random.randint(22, 35)
+        else:
+            age = random.randint(18, 75)
         
         occupation = random.choice(self.occupations)
         
-        # Location - fraudsters might cluster in certain areas
-        if is_fraud and random.random() < 0.4:
-            location = random.choice(self.shared_addresses[:10])  # Use shared addresses
+        # Location - only some fraudsters use shared addresses
+        if is_fraud and random.random() < 0.15:  # Only 15% use shared addresses
+            location = random.choice(self.shared_addresses[:10])
         else:
             location = fake.address()
         
-        # Claim history
-        num_prior_claims = 0
-        if is_fraud and random.random() < 0.5:
-            num_prior_claims = random.randint(2, 8)  # More claims
+        # Claim history - more realistic distribution
+        if is_fraud and random.random() < 0.3:
+            num_prior_claims = random.choices([2, 3, 4, 5], weights=[0.4, 0.3, 0.2, 0.1])[0]
         else:
-            num_prior_claims = random.choices([0, 1, 2, 3], weights=[0.6, 0.25, 0.1, 0.05])[0]
+            num_prior_claims = random.choices([0, 1, 2, 3], weights=[0.5, 0.3, 0.15, 0.05])[0]
         
         return {
             'age': age,
@@ -81,32 +89,41 @@ class InsuranceFraudDataGenerator:
         }
     
     def generate_claim_characteristics(self, policy_details, is_fraud=False):
-        """Generate claim characteristics with fraud patterns"""
+        """Generate claim characteristics with realistic patterns"""
         claim_type = random.choice(self.claim_types)
         
-        # Claim amount
+        # Claim amount - more realistic distribution with overlap
         if is_fraud:
-            if random.random() < 0.7:
-                # Just under deductible or coverage limit
+            # Mix of different fraud strategies
+            strategy = random.choices(['just_under', 'high_value', 'normal_looking'], 
+                                    weights=[0.3, 0.3, 0.4])[0]
+            
+            if strategy == 'just_under':
+                # Just under limits but with noise
                 if random.random() < 0.5:
-                    amount = policy_details['deductible'] * random.uniform(0.85, 0.99)
+                    amount = policy_details['deductible'] * random.uniform(0.85, 1.15)
                 else:
-                    amount = policy_details['coverage_limit'] * random.uniform(0.8, 0.95)
+                    amount = policy_details['coverage_limit'] * random.uniform(0.7, 0.95)
+            elif strategy == 'high_value':
+                # High value claims but not always maximum
+                amount = random.uniform(20000, min(80000, policy_details['coverage_limit']))
             else:
-                amount = random.uniform(5000, 50000)
+                # Normal looking fraudulent claims
+                amount = abs(np.random.normal(18000, 8000))
         else:
-            # Normal distribution for legitimate claims
-            amount = min(abs(np.random.normal(15000, 10000)), policy_details['coverage_limit'])
+            # Legitimate claims - wider distribution
+            amount = min(abs(np.random.normal(15000, 9000)), policy_details['coverage_limit'])
+            # Some legitimate claims can be high too
+            if random.random() < 0.05:  # 5% of legitimate claims are high value
+                amount = random.uniform(30000, min(60000, policy_details['coverage_limit']))
         
-        # Claim date (relative to policy start)
+        # Claim date - more realistic timing
         days_after_policy_start = random.randint(1, policy_details['tenure_days'])
-        if is_fraud and random.random() < 0.6:
-            # Fraudulent claims often happen soon after policy start
-            days_after_policy_start = min(random.randint(1, 90), policy_details['tenure_days'])
+        if is_fraud and random.random() < 0.25:  # Only 25% of frauds are suspiciously early
+            days_after_policy_start = min(random.randint(1, 120), policy_details['tenure_days'])
         
         claim_date = policy_details['policy_start_date'] + timedelta(days=days_after_policy_start)
         
-        # Description
         descriptions = {
             'Collision': ['Rear-ended at traffic light', 'Hit parked car', 'Highway collision', 'Intersection accident'],
             'Property Damage': ['Vandalism to vehicle', 'Hail damage', 'Tree fell on car', 'Shopping cart damage'],
@@ -128,34 +145,40 @@ class InsuranceFraudDataGenerator:
         }
     
     def generate_behavioral_flags(self, claim_date, is_fraud=False):
-        """Generate behavioral indicators"""
-        # Time to report (fraudsters might report very quickly or with suspicious delays)
+        """Generate behavioral indicators with realistic variation"""
+        # Time to report - more variation
         if is_fraud:
-            if random.random() < 0.5:
-                days_to_report = random.choices([0, 1, 30, 45], weights=[0.4, 0.3, 0.2, 0.1])[0]
+            # Mix of behaviors
+            if random.random() < 0.3:
+                days_to_report = random.choices([0, 1, 20, 30, 45], weights=[0.3, 0.2, 0.2, 0.2, 0.1])[0]
             else:
-                days_to_report = random.randint(0, 60)
+                days_to_report = random.randint(0, 14)  # Some fraudsters report normally
         else:
-            days_to_report = random.choices([0, 1, 2, 3, 7, 14], weights=[0.3, 0.3, 0.2, 0.1, 0.05, 0.05])[0]
+            days_to_report = random.choices([0, 1, 2, 3, 7, 14, 30], weights=[0.25, 0.25, 0.2, 0.15, 0.1, 0.04, 0.01])[0]
         
         report_date = claim_date + timedelta(days=days_to_report)
         
-        # Documentation quality (1-10 scale)
+        # Documentation quality - more overlap
         if is_fraud:
-            doc_quality = random.choices([2, 3, 4, 8, 9], weights=[0.2, 0.3, 0.3, 0.1, 0.1])[0]
+            # Not all fraudsters have poor documentation
+            doc_quality = random.choices([2, 3, 4, 5, 6, 7, 8], 
+                                       weights=[0.1, 0.15, 0.2, 0.2, 0.15, 0.1, 0.1])[0]
         else:
-            doc_quality = random.choices([6, 7, 8, 9, 10], weights=[0.1, 0.2, 0.3, 0.3, 0.1])[0]
+            # Some legitimate claims have poor documentation too
+            doc_quality = random.choices([4, 5, 6, 7, 8, 9, 10], 
+                                       weights=[0.05, 0.1, 0.15, 0.2, 0.25, 0.2, 0.05])[0]
         
-        # Witness availability
+        # Witness availability - more realistic
         if is_fraud:
-            witness_available = random.choices([True, False], weights=[0.3, 0.7])[0]
+            witness_available = random.choices([True, False], weights=[0.25, 0.75])[0]
         else:
-            witness_available = random.choices([True, False], weights=[0.6, 0.4])[0]
+            witness_available = random.choices([True, False], weights=[0.55, 0.45])[0]
         
-        # Police report filed
-        police_report = random.choices([True, False], weights=[0.7, 0.3])[0]
-        if is_fraud and random.random() < 0.4:
-            police_report = False
+        # Police report - both groups file reports
+        if is_fraud:
+            police_report = random.choices([True, False], weights=[0.4, 0.6])[0]
+        else:
+            police_report = random.choices([True, False], weights=[0.7, 0.3])[0]
         
         return {
             'days_to_report': days_to_report,
@@ -166,7 +189,7 @@ class InsuranceFraudDataGenerator:
         }
     
     def generate_network_features(self, claimant_info, is_fraud=False):
-        """Generate network-related features for fraud rings"""
+        """Generate network features with realistic patterns"""
         features = {
             'shared_address': False,
             'shared_phone': False,
@@ -175,30 +198,41 @@ class InsuranceFraudDataGenerator:
         }
         
         if is_fraud:
-            # Shared address (already handled in claimant_info)
-            if claimant_info['location'] in self.shared_addresses[:10]:
+            # Only some fraudsters are part of networks
+            if random.random() < 0.15:  # 15% are part of address networks
                 features['shared_address'] = True
             
-            # Shared phone
-            if random.random() < 0.4:
+            # Shared phone - even rarer
+            if random.random() < 0.1:  # 10% share phones
                 features['shared_phone'] = True
                 features['phone_number'] = random.choice(self.shared_phones[:10])
             else:
                 features['phone_number'] = fake.phone_number()
             
-            # Suspicious repair shop (some shops might be part of fraud rings)
-            if random.random() < 0.6:
-                features['repair_shop'] = random.choice(self.repair_shops[:5])  # First 5 shops are "suspicious"
+            # Suspicious repair shop - some correlation but not perfect
+            if random.random() < 0.35:  # 35% use suspicious shops
+                features['repair_shop'] = random.choice(self.repair_shops[:5])
                 features['suspicious_repair_shop'] = True
             else:
                 features['repair_shop'] = random.choice(self.repair_shops)
             
-            # Linked claims (number of claims linked to same address/phone/shop)
-            features['linked_claims'] = random.choices([1, 2, 3, 5, 8], weights=[0.2, 0.3, 0.3, 0.15, 0.05])[0]
+            # Linked claims - more realistic distribution
+            if features['shared_address'] or features['shared_phone']:
+                features['linked_claims'] = random.choices([1, 2, 3, 4], weights=[0.4, 0.3, 0.2, 0.1])[0]
+            else:
+                features['linked_claims'] = random.choices([0, 1], weights=[0.7, 0.3])[0]
         else:
+            # Legitimate claims can sometimes have these features too
             features['phone_number'] = fake.phone_number()
             features['repair_shop'] = random.choice(self.repair_shops)
-            features['linked_claims'] = random.choices([0, 1], weights=[0.9, 0.1])[0]
+            
+            # Very rarely, legitimate claims might appear linked
+            if random.random() < 0.02:  # 2% false positive rate
+                features['linked_claims'] = 1
+            
+            # Legitimate customers might use popular repair shops
+            if features['repair_shop'] in self.repair_shops[:5] and random.random() < 0.1:
+                features['suspicious_repair_shop'] = True
         
         return features
     
@@ -210,6 +244,10 @@ class InsuranceFraudDataGenerator:
         claim = self.generate_claim_characteristics(policy, is_fraud)
         behavioral = self.generate_behavioral_flags(claim['claim_date'], is_fraud)
         network = self.generate_network_features(claimant, is_fraud)
+        
+        # Add some noise - occasionally mislabel (simulates real-world uncertainty)
+        if random.random() < 0.02:  # 2% noise rate
+            is_fraud = not is_fraud
         
         # Combine all features
         record = {
@@ -256,12 +294,17 @@ class InsuranceFraudDataGenerator:
         return record
     
     def generate_dataset(self, num_records=10000, fraud_rate=0.15):
-        """Generate complete synthetic dataset"""
+        """Generate complete synthetic dataset with realistic patterns"""
         records = []
         num_fraud = int(num_records * fraud_rate)
         num_legitimate = num_records - num_fraud
         
         print(f"Generating {num_records} records: {num_legitimate} legitimate, {num_fraud} fraudulent...")
+        print("Creating more realistic fraud patterns with:")
+        print("- No perfect correlations")
+        print("- Overlapping distributions")
+        print("- Natural variation and noise")
+        print("- Subtle fraud indicators")
         
         # Generate fraudulent records
         for _ in range(num_fraud):
@@ -277,48 +320,46 @@ class InsuranceFraudDataGenerator:
         # Convert to DataFrame
         df = pd.DataFrame(records)
         
-        # Add some derived features
+        # Add derived features
         df['claim_to_premium_ratio'] = df['claim_amount'] / df['policy_premium']
         df['claim_to_coverage_ratio'] = df['claim_amount'] / df['coverage_limit']
         df['early_claim'] = (df['policy_tenure_days'] < 90).astype(int)
         df['high_claim_history'] = (df['num_prior_claims'] > 2).astype(int)
+        
+        # Add some additional realistic patterns
+        # Seasonal adjustments (more claims in certain months)
+        df['claim_date'] = pd.to_datetime(df['claim_date'])
+        month_weights = [0.8, 0.85, 1.1, 1.15, 1.2, 1.3, 0.9, 0.85, 0.9, 0.95, 0.85, 0.9]
+        df['seasonal_factor'] = df['claim_date'].dt.month.map(dict(enumerate(month_weights, 1)))
         
         return df
 
 # Example usage
 if __name__ == "__main__":
     # Initialize generator
-    generator = InsuranceFraudDataGenerator()
+    generator = ImprovedInsuranceFraudDataGenerator()
     
     # Generate dataset
     df = generator.generate_dataset(num_records=5000, fraud_rate=0.15)
     
     # Save to CSV
-    df.to_csv('insurance_fraud_synthetic_data.csv', index=False)
+    df.to_csv('insurance_fraud_realistic_data.csv', index=False)
     
-    # Display basic statistics
+    # Display statistics showing more realistic patterns
     print("\nDataset Statistics:")
     print(f"Total records: {len(df)}")
     print(f"Fraud cases: {df['is_fraud'].sum()} ({df['is_fraud'].mean()*100:.1f}%)")
-    print(f"\nClaim type distribution:")
-    print(df['claim_type'].value_counts())
-    print(f"\nAverage claim amounts:")
+    
+    print("\nFraud rates by key indicators (showing realistic overlap):")
+    print(f"Early claims (<90 days): {df[df['early_claim']==1]['is_fraud'].mean():.1%}")
+    print(f"Shared addresses: {df[df['shared_address']==True]['is_fraud'].mean():.1%}")
+    print(f"Low documentation (<5): {df[df['documentation_quality']<5]['is_fraud'].mean():.1%}")
+    print(f"Suspicious repair shops: {df[df['suspicious_repair_shop']==True]['is_fraud'].mean():.1%}")
+    
+    print("\nAverage claim amounts:")
     print(f"Legitimate: ${df[df['is_fraud']==False]['claim_amount'].mean():,.2f}")
     print(f"Fraudulent: ${df[df['is_fraud']==True]['claim_amount'].mean():,.2f}")
+    print(f"Ratio: {df[df['is_fraud']==True]['claim_amount'].mean() / df[df['is_fraud']==False]['claim_amount'].mean():.2f}x")
     
-    # Save sample data preview
     print("\nFirst 5 records:")
     print(df.head())
-    
-    # Save data profile
-    profile = {
-        'total_records': len(df),
-        'fraud_rate': df['is_fraud'].mean(),
-        'features': list(df.columns),
-        'claim_types': df['claim_type'].unique().tolist(),
-        'avg_claim_amount': df['claim_amount'].mean(),
-        'avg_policy_tenure': df['policy_tenure_days'].mean()
-    }
-    
-    with open('data_profile.json', 'w') as f:
-        json.dump(profile, f, indent=2)
