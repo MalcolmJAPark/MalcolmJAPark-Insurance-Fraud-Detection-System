@@ -44,3 +44,9 @@ Claim to premium ratio
 Claim to coverage ratio
 Early claim indicator (within 90 days)
 High claim history flag
+
+Initial fraud data generator had concerning patterns that suggested generator might be creating overly
+obvious fraud patterns:
+Unrealistic perfect correlations
+Extreme differences
+Overly strong correlations
