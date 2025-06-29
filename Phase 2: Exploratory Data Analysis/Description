@@ -1,0 +1,19 @@
+## Statistical Analysis
+Distribution analysis of claim amounts (fraud vs. legitimate)
+Temporal patterns (day of week, time of year)
+Geographic clustering of fraudulent claims
+Correlation analysis between features
+
+## Visualization Requirements
+Key visualizations to create:
+1. Fraud rate by claim amount buckets
+2. Time-to-report distribution comparison
+3. Network graph of connected entities
+4. Feature importance heatmap
+5. Geographic fraud density map
+
+## Identify Natural Fraud Indicators
+Claims just below deductible
+Multiple claims in short timeframe
+Claims in first 30 days of policy
+Unusual claim amounts for incident type
