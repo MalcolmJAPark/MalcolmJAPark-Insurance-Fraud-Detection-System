@@ -1,2 +1,46 @@
-Synthetic Data Generation
+Key Features Generated:
+1. Claim Characteristics
 
+Unique claim IDs
+Claim amounts (with fraud patterns like claims just under deductibles/limits)
+Claim dates and types (7 different types)
+Detailed descriptions for each claim type
+
+2. Policy Details
+
+Premium amounts
+Policy tenure (fraudsters tend to have newer policies)
+Coverage limits (5 tiers from $25K to $500K)
+Deductibles ($250 to $5,000)
+Policy start dates
+
+3. Claimant Information
+
+Customer IDs
+Age distribution (fraudsters cluster in 22-35 range)
+12 different occupations
+Location data
+Prior claim history (fraudsters have more claims)
+
+4. Behavioral Flags
+
+Days to report claim (fraudsters show unusual patterns)
+Documentation quality (1-10 scale)
+Witness availability
+Police report filing status
+Report dates
+
+5. Network Features
+
+Phone numbers (with shared numbers for fraud rings)
+Repair shop assignments (20 shops, first 5 are "suspicious")
+Shared address indicators
+Linked claims count
+Suspicious repair shop flags
+
+6. Additional Derived Features:
+
+Claim to premium ratio
+Claim to coverage ratio
+Early claim indicator (within 90 days)
+High claim history flag
